@@ -1,0 +1,10 @@
+/* Pywal Colors - Auto-generated */
+* {
+    background:     #022429;
+    background-alt: #1499b8;
+    foreground:     #c3c5c5;
+    selected:       #1aacff;
+    active:         #0c54e5;
+    urgent:         #f6c113;
+    border:         #1aacff;
+}

@@ -1,0 +1,352 @@
+#!/usr/bin/env bash
+
+#  ╦ ╦╔═╗╦  ╦  ╔═╗╔═╗╔═╗╔═╗╦═╗  ╔═╗╦ ╦╦╔╦╗╔═╗╦ ╦
+#  ║║║╠═╣║  ║  ╠═╝╠═╣╠═╝║╣ ╠╦╝  ╚═╗║║║║║ ║ ║  ╠═╣
+#  ╚╩╝╩ ╩╩═╝╩═╝╩  ╩ ╩╩  ╚═╝╩╚═  ╚═╝╚╩╝╩ ╩ ╚═╝╩ ╩
+#  Safe wallpaper switcher with pywal theming
+
+WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+I3_CONFIG="$HOME/.config/i3/config"
+KITTY_CONF_DIR="$HOME/.config/kitty"
+KITTY_MAIN="$KITTY_CONF_DIR/kitty.conf"
+KITTY_COLORS="$KITTY_CONF_DIR/colors.conf"
+CURRENT_WALL="$HOME/.config/.current_wallpaper"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+print_msg() { echo -e "${!1}$2${NC}"; }
+
+# --- SAFETY CHECKS ---
+setup_configs() {
+    # 1. Create wallpaper directory
+    if [ ! -d "$WALLPAPER_DIR" ]; then
+        print_msg YELLOW "Creating wallpaper directory..."
+        mkdir -p "$WALLPAPER_DIR"
+        print_msg CYAN "Add wallpapers to: $WALLPAPER_DIR"
+    fi
+    
+    # 2. Create kitty colors file
+    if [ ! -f "$KITTY_COLORS" ]; then
+        print_msg YELLOW "Creating kitty colors file..."
+        touch "$KITTY_COLORS"
+    fi
+    
+    # 3. Ensure kitty includes colors file (one-time setup)
+    if ! grep -q "include colors.conf" "$KITTY_MAIN"; then
+        print_msg YELLOW "Adding colors include to kitty.conf..."
+        echo "" >> "$KITTY_MAIN"
+        echo "# Pywal Colors - Auto-updated by wallpaper switcher" >> "$KITTY_MAIN"
+        echo "include colors.conf" >> "$KITTY_MAIN"
+        print_msg GREEN "✓ Kitty config updated"
+    fi
+    
+    # 4. Check if i3 has color markers
+    if ! grep -q "####### PYWAL COLORS #######" "$I3_CONFIG"; then
+        print_msg YELLOW "Adding color markers to i3 config..."
+        
+        # Find the line with hardcoded Dracula colors (line 298)
+        local dracula_line=$(grep -n "############## DRACULA ############" "$I3_CONFIG" | cut -d: -f1)
+        
+        if [ -n "$dracula_line" ]; then
+            # Replace DRACULA comment with PYWAL marker
+            sed -i "${dracula_line}s/.*/####### PYWAL COLORS #######/" "$I3_CONFIG"
+            
+            # Add end marker after client.background line (around line 325)
+            local bg_line=$(grep -n "client.background" "$I3_CONFIG" | head -1 | cut -d: -f1)
+            if [ -n "$bg_line" ]; then
+                sed -i "${bg_line}a\\####### END PYWAL COLORS #######" "$I3_CONFIG"
+                print_msg GREEN "✓ i3 config markers added"
+            fi
+        else
+            print_msg RED "Warning: Could not find Dracula color section"
+            print_msg YELLOW "You may need to manually add markers to i3 config"
+        fi
+    fi
+}
+
+# List wallpapers
+list_wallpapers() {
+    print_msg CYAN "═══════════════════════════════════"
+    print_msg CYAN "     Available Wallpapers"
+    print_msg CYAN "═══════════════════════════════════"
+    echo
+    
+    local wallpapers=($(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.jpeg" \) | sort))
+    
+    if [ ${#wallpapers[@]} -eq 0 ]; then
+        print_msg RED "No wallpapers found!"
+        print_msg YELLOW "Add .jpg or .png files to: $WALLPAPER_DIR"
+        exit 1
+    fi
+    
+    local current=$(cat "$CURRENT_WALL" 2>/dev/null)
+    
+    for i in "${!wallpapers[@]}"; do
+        local name=$(basename "${wallpapers[$i]}")
+        if [ "${wallpapers[$i]}" == "$current" ]; then
+            print_msg GREEN "  ➜ $((i+1)). $name (current)"
+        else
+            echo "    $((i+1)). $name"
+        fi
+    done
+    echo
+}
+
+# Apply wallpaper and colors
+apply_wallpaper() {
+    local wallpaper=$1
+    
+    if [ ! -f "$wallpaper" ]; then
+        print_msg RED "Error: File not found: $wallpaper"
+        exit 1
+    fi
+    
+    local name=$(basename "$wallpaper")
+    print_msg YELLOW "╭──────────────────────────────────────╮"
+    print_msg YELLOW "│  Applying: $name"
+    print_msg YELLOW "╰──────────────────────────────────────╯"
+    echo
+    
+    # 1. Generate colors with Pywal (with saturation for distinct colors)
+    print_msg BLUE "  → Generating color palette..."
+    wal -i "$wallpaper" -n -q --saturate 0.7 || \
+    wal -i "$wallpaper" --backend colorz -n -q --saturate 0.8
+    
+    # 2. Set wallpaper
+    print_msg BLUE "  → Setting wallpaper..."
+    feh --bg-fill "$wallpaper"
+    
+    # 3. Update i3 colors (SAFE - only replaces content between markers)
+    print_msg BLUE "  → Updating i3 colors..."
+    source "$HOME/.cache/wal/colors.sh"
+    
+    # Build the color block
+    local color_block="####### PYWAL COLORS #######
+set \$bg         $color0
+set \$bg1        $color8
+set \$bg2        $color7
+set \$fg         $foreground
+set \$cyan       $color6
+set \$green      $color2
+set \$orange     $color3
+set \$pink       $color5
+set \$purple     $color4
+set \$red        $color1
+set \$yellow     $color3
+set \$aqua       $color6
+set \$grey       $color8
+
+# target                 title        bg          text        indicator    brdr
+client.focused           \$purple     \$purple    \$bg        \$purple     \$purple
+client.unfocused         \$bg         \$bg1       \$fg        \$bg1        \$bg1
+client.urgent            \$red        \$red       \$bg        \$red        \$red
+client.placeholder       \$bg         \$bg        \$fg        \$bg         \$bg
+client.background        \$bg
+####### END PYWAL COLORS #######"
+    
+    # Replace content between markers (preserves everything else)
+    awk -v new_block="$color_block" '
+    /####### PYWAL COLORS #######/ { 
+        print new_block
+        skip=1
+        next 
+    }
+    /####### END PYWAL COLORS #######/ { 
+        skip=0
+        next 
+    }
+    !skip { print }
+    ' "$I3_CONFIG" > "${I3_CONFIG}.tmp" && mv "${I3_CONFIG}.tmp" "$I3_CONFIG"
+    
+    # 4. Update Kitty colors (SAFE - separate colors.conf file)
+    print_msg BLUE "  → Updating Kitty colors..."
+    
+    if [ -f "$HOME/.cache/wal/colors-kitty.conf" ]; then
+        cat > "$KITTY_COLORS" << EOF
+# Pywal Colors - Auto-generated
+# Wallpaper: $name
+# Generated: $(date)
+
+EOF
+        cat "$HOME/.cache/wal/colors-kitty.conf" >> "$KITTY_COLORS"
+    else
+        print_msg YELLOW "  Warning: Pywal kitty colors not found"
+    fi
+    
+    # 5. Save current wallpaper
+    echo "$wallpaper" > "$CURRENT_WALL"
+    
+    # 6. Reload everything
+    print_msg BLUE "  → Reloading i3 and kitty..."
+    i3-msg reload >/dev/null 2>&1
+    killall -SIGUSR1 kitty 2>/dev/null || true
+    
+    # --- THE SAFETY NET ---
+    # Wait for the reload to settle (2 seconds), then force the gaps.
+    # This runs AFTER smart_monitor.sh, ensuring the gaps win.
+    print_msg BLUE "  → Enforcing layout..."
+    sleep 2
+    i3-msg gaps top all set 45 >/dev/null 2>&1
+
+    echo
+    print_msg GREEN "✓ Done! Wallpaper and colors applied"
+}
+
+# Rofi menu
+rofi_select() {
+    local wallpapers=($(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.jpeg" \) | sort))
+    
+    if [ ${#wallpapers[@]} -eq 0 ]; then
+        print_msg RED "No wallpapers found in $WALLPAPER_DIR"
+        exit 1
+    fi
+    
+    local current=$(cat "$CURRENT_WALL" 2>/dev/null)
+    local options=""
+    
+    for wall in "${wallpapers[@]}"; do
+        local name=$(basename "$wall")
+        if [ "$wall" == "$current" ]; then
+            options+="✓ $name\n"
+        else
+            options+="  $name\n"
+        fi
+    done
+    
+    local selected=$(echo -e "$options" | rofi -dmenu -i -p "Select Wallpaper" -theme ~/.config/rofi/launchers/misc/blurry.rasi)
+    
+    if [ -n "$selected" ]; then
+        selected=$(echo "$selected" | sed 's/^✓ //; s/^  //')
+        
+        for wall in "${wallpapers[@]}"; do
+            if [ "$(basename "$wall")" == "$selected" ]; then
+                apply_wallpaper "$wall"
+                break
+            fi
+        done
+    fi
+}
+
+# Random wallpaper
+random_wallpaper() {
+    local wallpapers=($(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.jpeg" \)))
+    
+    if [ ${#wallpapers[@]} -eq 0 ]; then
+        print_msg RED "No wallpapers found!"
+        exit 1
+    fi
+    
+    local random_wall="${wallpapers[RANDOM % ${#wallpapers[@]}]}"
+    apply_wallpaper "$random_wall"
+}
+
+# Interactive terminal menu
+interactive_select() {
+    list_wallpapers
+    
+    local wallpapers=($(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.jpeg" \) | sort))
+    
+    print_msg CYAN "Select wallpaper (1-${#wallpapers[@]}), 'r' for random, or 'q' to quit: "
+    read -r choice
+    
+    case "$choice" in
+        q|Q) print_msg YELLOW "Exiting..."; exit 0 ;;
+        r|R) random_wallpaper ;;
+        *)
+            if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#wallpapers[@]}" ]; then
+                apply_wallpaper "${wallpapers[$((choice-1))]}"
+            else
+                print_msg RED "Invalid choice!"
+                sleep 1
+                interactive_select
+            fi
+            ;;
+    esac
+}
+
+# Show help
+show_help() {
+    cat << EOF
+Wallpaper Switcher with Pywal Theming
+
+Usage: $(basename $0) [OPTION] [FILE]
+
+Options:
+    -r, --rofi          Show rofi selection menu
+    -l, --list          List available wallpapers
+    -a, --apply FILE    Apply specific wallpaper
+    -R, --random        Apply random wallpaper
+    -s, --setup         Run setup (add markers to configs)
+    -h, --help          Show this help
+    
+    Without options: Interactive terminal menu
+
+Examples:
+    $(basename $0)                              # Interactive menu
+    $(basename $0) --rofi                       # Rofi menu
+    $(basename $0) --apply ~/Pictures/wall.jpg  # Apply specific
+    $(basename $0) --random                     # Random wallpaper
+
+Directory: $WALLPAPER_DIR
+
+What it does:
+  1. Generates vibrant colors with pywal (--saturate 0.7)
+  2. Updates i3 border colors (between markers only)
+  3. Updates kitty terminal colors (separate colors.conf)
+  4. Sets wallpaper with feh
+  5. Reloads i3 and kitty
+
+Safe operation:
+  - Uses markers in i3 config (####### PYWAL COLORS #######)
+  - Separate colors.conf for kitty (doesn't touch main config)
+  - Preserves all your custom settings
+
+EOF
+}
+
+# Run setup on first execution or if requested
+if [ ! -f "$KITTY_COLORS" ] || ! grep -q "####### PYWAL COLORS #######" "$I3_CONFIG"; then
+    setup_configs
+fi
+
+# Main argument handler
+case "${1:-}" in
+    -r|--rofi)
+        rofi_select
+        ;;
+    -l|--list)
+        list_wallpapers
+        ;;
+    -a|--apply)
+        if [ -n "${2:-}" ]; then
+            apply_wallpaper "$2"
+        else
+            print_msg RED "Error: Please specify wallpaper path"
+            show_help
+        fi
+        ;;
+    -R|--random)
+        random_wallpaper
+        ;;
+    -s|--setup)
+        setup_configs
+        print_msg GREEN "Setup complete!"
+        ;;
+    -h|--help)
+        show_help
+        ;;
+    "")
+        interactive_select
+        ;;
+    *)
+        print_msg RED "Unknown option: $1"
+        show_help
+        exit 1
+        ;;
+esac\

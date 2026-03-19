@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# scripts/workspace — i3wm version for saimoomedits/eww-widgets
+#
+# Outputs the same eww (box ...) literal as the original bspwm version.
+# CSS class scheme (matches eww.scss exactly):
+#   .0          → unoccupied workspace
+#   .01–.06     → occupied workspace (N = workspace number)
+#   .011–.066   → focused workspace  (NN = workspace number doubled)
+#
+# Requires: i3-msg, jq
+
+render() {
+    local workspaces
+    workspaces=$(i3-msg -t get_workspaces 2>/dev/null)
+
+    local out
+    out='(box :class "works" :orientation "h" :space-evenly false :halign "start"'
+
+    for i in 1 2 3 4 5 6; do
+        # Find this workspace in the JSON
+        local ws
+        ws=$(printf '%s' "$workspaces" | jq -c --argjson n "$i" '.[] | select(.num == $n)')
+
+        local class cmd
+        cmd="i3-msg workspace number ${i}"
+
+        if [[ -z "$ws" ]]; then
+            # Workspace doesn't exist → unoccupied
+            class="0"
+        else
+            local focused
+            focused=$(printf '%s' "$ws" | jq -r '.focused')
+            if [[ "$focused" == "true" ]]; then
+                # Focused: class is 0NN (e.g. workspace 1 → "011", workspace 3 → "033")
+                class="0$(printf '%d%d' "$i" "$i")"
+            else
+                # Occupied but not focused: class is 0N (e.g. "01", "03")
+                class="0${i}"
+            fi
+        fi
+
+        out+=" (button :class \"${class}\" :onclick \"${cmd}\" \"\")"
+    done
+
+    out+=")"
+    printf '%s\n' "$out"
+}
+
+# Emit initial state
+render
+
+# Re-render live on every i3 workspace event
+i3-msg -t subscribe -m '["workspace"]' | while IFS= read -r _; do
+    render
+done

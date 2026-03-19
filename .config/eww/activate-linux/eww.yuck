@@ -1,0 +1,18 @@
+(defwidget activate-linux []
+  (box
+    :orientation "v"
+    :halign "start"
+    :valign "start"
+    :space-evenly false  ; Added this so text doesn't spread out weirdly
+    (label :xalign 0 :markup "<span font_size=\"large\" alpha=\"50%\">Activate Linux</span>")
+    (label :xalign 0 :markup "<span alpha=\"50%\">Go to Settings to activate Linux</span>")))
+
+(defwindow activate-linux
+  :monitor 0
+  :stacking "overlay"
+  :geometry (geometry :x "84%"        ; 82% across the screen (Safe spot for 1080p)
+                      :y "92%"        ; 88% down the screen
+                      :width "300px"
+                      :height "100px"
+                      :anchor "top left") ; Brute force anchor
+  (activate-linux))

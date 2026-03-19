@@ -1,0 +1,152 @@
+# ╔══════════════════════════════════════════════════════════╗
+# ║          Aesthetic Starship Terminal Prompt              ║
+# ╚══════════════════════════════════════════════════════════╝
+
+format = """
+[╭─](bold cyan)\
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$nodejs\
+$python\
+$rust\
+$golang\
+$docker_context\
+$line_break\
+[╰─](bold cyan)$character"""
+
+# Prompt character
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[✗](bold red)"
+vimcmd_symbol = "[←](bold green)"
+
+# Username
+[username]
+style_user = "bold cyan"
+style_root = "bold red"
+format = "[$user]($style) "
+disabled = false
+show_always = true
+
+# Hostname
+[hostname]
+ssh_only = false
+format = "[@](bold white)[$hostname](bold purple) "
+disabled = false
+
+# Directory
+[directory]
+style = "bold blue"
+format = "[$path]($style)[$read_only]($read_only_style) "
+truncation_length = 3
+truncate_to_repo = true
+read_only = " 🔒"
+
+# Git branch
+[git_branch]
+symbol = " "
+style = "bold purple"
+format = "on [$symbol$branch]($style) "
+
+# Git status
+[git_status]
+style = "bold yellow"
+format = '([$all_status$ahead_behind]($style) )'
+conflicted = "⚔️ "
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇕⇡${ahead_count}⇣${behind_count} "
+untracked = "🤷 "
+stashed = "📦 "
+modified = "📝 "
+staged = '[++\($count\)](green) '
+renamed = "👅 "
+deleted = "🗑️ "
+
+# Node.js
+[nodejs]
+symbol = " "
+style = "bold green"
+format = "via [$symbol($version )]($style)"
+
+# Python
+[python]
+symbol = " "
+style = "bold yellow"
+format = 'via [${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+
+# Rust
+[rust]
+symbol = " "
+style = "bold red"
+format = "via [$symbol($version )]($style)"
+
+# Go
+[golang]
+symbol = " "
+style = "bold cyan"
+format = "via [$symbol($version )]($style)"
+
+# Docker
+[docker_context]
+symbol = " "
+style = "bold blue"
+format = "via [$symbol$context]($style) "
+
+# Command duration
+[cmd_duration]
+min_time = 500
+style = "bold yellow"
+format = "took [$duration]($style) "
+
+# Time
+[time]
+disabled = false
+style = "bold white"
+format = "[$time]($style) "
+time_format = "%T"
+
+# Line break
+[line_break]
+disabled = false
+
+# Battery
+[battery]
+full_symbol = "🔋"
+charging_symbol = "⚡"
+discharging_symbol = "💀"
+disabled = false
+
+[[battery.display]]
+threshold = 30
+style = "bold red"
+
+# Memory usage
+[memory_usage]
+disabled = false
+threshold = 75
+symbol = " "
+style = "bold dimmed white"
+format = "via $symbol[$ram_pct]($style) "
+
+# Package version
+[package]
+symbol = "📦 "
+style = "bold 208"
+format = "is [$symbol$version]($style) "
+
+# AWS
+[aws]
+symbol = "  "
+style = "bold yellow"
+format = 'on [$symbol($profile )(\($region\) )]($style)'
+
+# Kubernetes
+[kubernetes]
+symbol = "☸ "
+style = "bold blue"
+format = 'on [$symbol$context( \($namespace\))]($style) '
+disabled = false

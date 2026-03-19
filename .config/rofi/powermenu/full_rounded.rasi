@@ -1,0 +1,99 @@
+configuration {
+    /* 1. FORCE ICONS OFF (Critical Fix) */
+    show-icons:                 false;
+    
+    font:                       "Ubuntu Nerd Font 12";
+    drun-display-format:        "{name}";
+    disable-history:            false;
+    fullscreen:                 false;
+    hide-scrollbar:             true;
+    sidebar-mode:               false;
+}
+
+/* 2. IMPORT COLORS (Your Script Generates This) */
+@import "styles/colors.rasi"
+
+/* 3. FALLBACK/DEBUG COLORS */
+/* If the import fails, these High-Contrast colors will appear */
+* {
+    background:                 #1e1e2e; /* Dark Blue */
+    foreground:                 #ffffff; /* White */
+    selected:                   #ff0000; /* Bright Red */
+    border-col:                 #ff0000;
+}
+
+* {
+    background-color:           @background;
+    text-color:                 @foreground;
+}
+
+window {
+    transparency:               "real";
+    background-color:           @background;
+    text-color:                 @foreground;
+    location:                   center;
+    width:                      600px;
+    height:                     220px;
+    border:                     2px;
+    border-color:               @selected;
+    border-radius:              12px;
+}
+
+/* Hide input bar completely */
+inputbar {
+    enabled:                    false;
+    children:                   [ prompt ];
+}
+
+/* List of items */
+listview {
+    background-color:           @background;
+    columns:                    5;
+    lines:                      1;
+    spacing:                    20px;
+    cycle:                      true;
+    dynamic:                    true;
+    layout:                     vertical;
+    margin:                     20px;
+}
+
+mainbox {
+    background-color:           @background;
+    children:                   [ listview ];
+    padding:                    20px;
+}
+
+element {
+    background-color:           @background;
+    text-color:                 @foreground;
+    orientation:                vertical;
+    border-radius:              12px;
+    padding:                    25px 0px 25px 0px;
+}
+
+/* 4. TEXT SETTINGS (The Icons) */
+element-text {
+    /* Ensure this font is installed, otherwise it will be blank! */
+    font:                       "Ubuntu Nerd Font 48";
+    
+    expand:                     true;
+    horizontal-align:           0.5;
+    vertical-align:             0.5;
+    margin:                     0px;
+    background-color:           transparent;
+    text-color:                 inherit;
+}
+
+/* 5. DISABLE IMAGE ICONS (Critical Fix) */
+element-icon {
+    size:                       0px;
+    border:                     0px;
+    enabled:                    false;
+}
+
+element selected {
+    background-color:           @selected;
+    text-color:                 @background;
+    border:                     0px;
+    border-radius:              12px;
+}

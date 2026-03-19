@@ -1,0 +1,61 @@
+/* Minimal Glass Theme - Isolated Mode */
+
+configuration {
+    show-icons:                 false;
+    /* Verified Font from your screenshot */
+    font:                       "JetBrainsMono Nerd Font 14";
+}
+
+* {
+    /* Glass Colors */
+    background:                 #000000A0; /* Dark Glass (60% Opacity) */
+    foreground:                 #FFFFFF;   /* White */
+    selected:                   #FFFFFF20; /* White Highlight */
+    
+    background-color:           transparent;
+    text-color:                 @foreground;
+}
+
+window {
+    transparency:               "real";
+    background-color:           @background;
+    location:                   center;
+    width:                      600px;
+    height:                     200px;
+    border-radius:              12px;
+}
+
+mainbox {
+    children:                   [ listview ];
+    padding:                    40px;
+}
+
+listview {
+    columns:                    5;
+    lines:                      1;
+    spacing:                    20px;
+    cycle:                      true;
+    dynamic:                    true;
+    layout:                     vertical;
+}
+
+element {
+    orientation:                vertical;
+    padding:                    25px 0px 25px 0px;
+    border-radius:              12px;
+}
+
+element-text {
+    /* Big Icons */
+    font:                       "JetBrainsMono Nerd Font 48";
+    expand:                     true;
+    horizontal-align:           0.5;
+    vertical-align:             0.5;
+    text-color:                 inherit;
+}
+
+element selected {
+    background-color:           @selected;
+    border:                     1px;
+    border-color:               @foreground;
+}

@@ -1,0 +1,7 @@
+/home/joydeepwm/.icons:
+default
+Moga-Neon-Purple
+
+/home/joydeepwm/.local/share/icons:
+feather
+hicolor
